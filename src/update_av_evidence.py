@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from collect_nhtsa_sgo import DOWNLOADS, collect_sources, write_revision
+from revision_integrity import verify_revision_integrity
 
 ROOT = Path(__file__).resolve().parents[1]
 DMV_REPORT_YEARS = (2023, 2024, 2025)
@@ -102,6 +103,16 @@ def report_period(year: int) -> dict[str, str]:
     return {"start": f"{year - 1}-12-01", "end": f"{year}-11-30"}
 
 
+def dmv_revision_id(sources: list[dict[str, Any]]) -> str:
+    identity = "\n".join(
+        sorted(
+            f"{item['year']}:{item['kind']}:{item.get('sha256', item['http_status'])}"
+            for item in sources
+        )
+    )
+    return hashlib.sha256(identity.encode()).hexdigest()
+
+
 def collect_dmv() -> tuple[dict[str, Any], dict[str, bytes]]:
     raw_files: dict[str, bytes] = {}
     sources: list[dict[str, Any]] = []
@@ -138,30 +149,59 @@ def collect_dmv() -> tuple[dict[str, Any], dict[str, bytes]]:
         raise ValueError(
             f"required 2024 California DMV sources unavailable: {required - available}"
         )
-    identity = "\n".join(
-        sorted(
-            f"{item['year']}:{item['kind']}:{item.get('sha256', item['http_status'])}"
-            for item in sources
-        )
-    )
     return (
         {
             "schema_version": 1,
             "publisher": "California Department of Motor Vehicles",
             "retrieved_at": datetime.now(UTC).isoformat(),
             "sources": sources,
-            "revision_id": hashlib.sha256(identity.encode()).hexdigest(),
+            "revision_id": dmv_revision_id(sources),
         },
         raw_files,
     )
 
 
+def _dmv_file_hashes(manifest: dict[str, Any]) -> dict[str, str]:
+    return {
+        str(item["filename"]): str(item["sha256"])
+        for item in manifest["sources"]
+        if item.get("http_status") == 200
+    }
+
+
 def write_dmv_revision(
     manifest: dict[str, Any], raw_files: dict[str, bytes], root: Path
 ) -> Path:
-    target = root / str(manifest["revision_id"])
+    revision = str(manifest["revision_id"])
+    sources = manifest.get("sources")
+    if not isinstance(sources, list):
+        raise ValueError("California DMV revision manifest sources must be a list")
+    verify_revision_integrity(
+        target=None,
+        expected_revision_id=revision,
+        manifest_revision_id=revision,
+        recomputed_revision_id=dmv_revision_id(sources),
+        raw_files=raw_files,
+        manifest_file_hashes=_dmv_file_hashes(manifest),
+    )
+
+    target = root / revision
     manifest_path = target / "manifest.json"
     if manifest_path.exists():
+        stored = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if not isinstance(stored, dict):
+            raise ValueError("California DMV revision manifest must be a JSON object")
+        stored_sources = stored.get("sources")
+        if not isinstance(stored_sources, list):
+            raise ValueError("California DMV revision manifest sources must be a list")
+        verify_revision_integrity(
+            target=target,
+            expected_revision_id=revision,
+            manifest_revision_id=str(stored.get("revision_id", "")),
+            recomputed_revision_id=dmv_revision_id(stored_sources),
+            raw_files=raw_files,
+            manifest_file_hashes=_dmv_file_hashes(stored),
+        )
         return manifest_path
     target.mkdir(parents=True, exist_ok=True)
     for filename, raw in raw_files.items():
