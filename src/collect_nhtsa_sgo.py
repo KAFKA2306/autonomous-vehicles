@@ -11,6 +11,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from urllib.request import Request, urlopen
 
+from revision_integrity import verify_revision_integrity
+
 SOURCE_PAGE = "https://www.nhtsa.gov/es/node/103486"
 DOWNLOADS = {
     "ads": "https://static.nhtsa.gov/odi/ffdd/sgo-2021-01/SGO-2021-01_Incident_Reports_ADS.csv",
@@ -94,13 +96,56 @@ def write_manifest(manifest: dict[str, object], output: Path) -> Path:
     return output
 
 
+def _raw_by_filename(raw_files: dict[str, bytes]) -> dict[str, bytes]:
+    return {f"{category}.csv": raw_files[category] for category in DOWNLOADS}
+
+
+def _dataset_hashes(manifest: dict[str, object]) -> dict[str, str]:
+    return {
+        str(item["filename"]): str(item["sha256"])
+        for item in manifest["datasets"]  # type: ignore[index]
+    }
+
+
+def _verify_nhtsa_manifest(
+    manifest: dict[str, object], raw_files: dict[str, bytes], target: Path | None
+) -> None:
+    datasets = manifest["datasets"]
+    if not isinstance(datasets, list):
+        raise ValueError("NHTSA revision manifest datasets must be a list")
+    expected_revision = revision_id(datasets)
+    verify_revision_integrity(
+        target=target,
+        expected_revision_id=expected_revision,
+        manifest_revision_id=str(manifest["revision_id"]),
+        recomputed_revision_id=revision_id(datasets),
+        raw_files=_raw_by_filename(raw_files),
+        manifest_file_hashes=_dataset_hashes(manifest),
+    )
+
+
 def write_revision(
     manifest: dict[str, object], raw_files: dict[str, bytes], revision_dir: Path
 ) -> Path:
     revision = str(manifest["revision_id"])
     target = revision_dir / revision
     manifest_path = target / "manifest.json"
+    _verify_nhtsa_manifest(manifest, raw_files, None)
     if manifest_path.exists():
+        stored = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if not isinstance(stored, dict):
+            raise ValueError("NHTSA revision manifest must be a JSON object")
+        stored_datasets = stored.get("datasets")
+        if not isinstance(stored_datasets, list):
+            raise ValueError("NHTSA revision manifest datasets must be a list")
+        verify_revision_integrity(
+            target=target,
+            expected_revision_id=revision,
+            manifest_revision_id=str(stored.get("revision_id", "")),
+            recomputed_revision_id=revision_id(stored_datasets),
+            raw_files=_raw_by_filename(raw_files),
+            manifest_file_hashes=_dataset_hashes(stored),
+        )
         return manifest_path
 
     target.mkdir(parents=True, exist_ok=True)
