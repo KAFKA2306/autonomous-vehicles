@@ -15,7 +15,10 @@ def nhtsa_raw() -> dict[str, bytes]:
     }
 
 
-def nhtsa_manifest(raw_files: dict[str, bytes], retrieved_at: str = "2026-09-12T00:00:00+00:00") -> dict[str, object]:
+def nhtsa_manifest(
+    raw_files: dict[str, bytes],
+    retrieved_at: str = "2026-09-12T00:00:00+00:00",
+) -> dict[str, object]:
     datasets = [
         {
             "category": category,
@@ -43,7 +46,10 @@ def dmv_raw() -> dict[str, bytes]:
     }
 
 
-def dmv_manifest(raw_files: dict[str, bytes], retrieved_at: str = "2026-09-12T00:00:00+00:00") -> dict[str, object]:
+def dmv_manifest(
+    raw_files: dict[str, bytes],
+    retrieved_at: str = "2026-09-12T00:00:00+00:00",
+) -> dict[str, object]:
     sources = [
         {
             "year": 2024,
