@@ -2,7 +2,7 @@
   "dataset": "Autonomous Vehicles government evidence",
   "evidence": {
     "california_dmv_revision_manifest": "data/california/dmv/revisions/246928648625703fa4a5936b6ec7965a43595573a9740c17b95bf042852fc8cf/manifest.json",
-    "nhtsa_revision_manifest": "data/nhtsa/sgo/revisions/409f3cf01849dc949949bf72adf4336d59b41755f57ad83494e8410becf75469/manifest.json"
+    "nhtsa_revision_manifest": "data/nhtsa/sgo/revisions/f1e47dee2b565bee3a29acbdec3262ee355fe7c5862c83335a0af289c4439d12/manifest.json"
   },
   "rules": [
     "ADS and Level 2 ADAS are separate categories",
