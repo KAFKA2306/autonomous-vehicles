@@ -1,0 +1,85 @@
+project:
+  id: "kafka:autonomous-vehicles"
+  name: "Government Autonomous Vehicle Evidence"
+  repository: "https://github.com/KAFKA2306/autonomous-vehicles"
+  version: "0.1.0"
+  updated: "2026-10-08"
+  core_ontology: "https://raw.githubusercontent.com/KAFKA2306/know/main/ontology/causal-evidence-core.yaml"
+
+purpose:
+  problem: "Track vehicle testing, regulatory permit and crash report sources without equating permit status or reported incidents with actual commercial operations or comparative safety."
+  intended_decisions: ["accept_source","reconcile_revision","publish_verified_summary","suppress_unsupported_safety_claim"]
+  success_conditions:
+    - "All published metrics link to government data and as-of periods."
+    - "Testing, deployment permit and operations remain separate."
+    - "A crash report count is never represented as an exposure-normalized safety rate."
+  falsification_conditions:
+    - "Disengagement metrics cross the 2026 reporting change without an explicit regime boundary."
+    - "A driverless permit alone becomes an active service claim."
+    - "Unmatched exposure units are used to calculate safety rates."
+
+scope:
+  included: ["operator","permit","government report","report revision","incident","statewide testing snapshot","reporting regime","public summary","evidence"]
+  excluded: ["inferred commercial geography","fabricated fleet mileage","company safety rank without denominator"]
+  temporal: "Publication, effective date, source observation, source revision and decision time are explicit and not inferred."
+  abstraction_level: "Existing repository authority, not a new central runtime."
+
+competency_questions:
+  - "Which California DMV permits were published at which effective date?"
+  - "What NHTSA SGO revision supports the reported incident count?"
+  - "Does this metric span a reporting-regime transition?"
+  - "Which summary statistics are published and which remain UNVERIFIED?"
+
+domain_mapping:
+  System: "GovernmentAVReportingSystem"
+  State: ["regulatory status","testing status","reporting-regime state","public-evidence freshness"]
+  Action: ["collect official revision","check source integrity","reconcile identity","publish evidence summary"]
+  Process: ["official source retrieval","raw SHA-256 revisioning","status normalization","summary generation"]
+  Observation: ["permit holder","DMV testing observation","ADS crash report","official reporting rule"]
+  Model: ["report revision reconciliation","semantic metric boundary","public summary builder"]
+  Requirement: ["government primary source","as-of applicability","ADS vs ADAS separation","exposure denominator"]
+  Claim: ["operator has testing permit","report count","testing miles observation","government publication current"]
+  Evidence: ["DMV raw revision","NHTSA report revision","source URL","SHA-256 digest","summary artifact"]
+  Decision: ["accept_source","reconcile_revision","publish_verified_summary","suppress_unsupported_safety_claim"]
+
+claims_and_evidence:
+  assertion_types: ["ObservedFact","ReportedFact","CalculatedValue","RequirementAssertion","DecisionAssertion"]
+  required_evidence:
+    MaterialClaim: ["source ID","source date","target object ID","exact scope","record hash"]
+    Decision: ["rule ID","source evidence ID","decision outcome"]
+  unknown_policy: "Missing, incompatible or stale source evidence is UNKNOWN, not PASS or deployed."
+
+decision_rules:
+  - id: "verified-public-summary"
+    when: "Official revision hash, regime, scope and effective period are verified."
+    result: "publish_verified_summary"
+  - id: "unsupported-rate"
+    when: "No matched exposure denominator or incompatible incident/report types."
+    result: "suppress_unsupported_safety_claim"
+
+provenance:
+  sources: ["California DMV original publications","NHTSA SGO reports","government rulemaking"]
+  generated_artifacts: ["api/v1/autonomous-vehicles/summary.json","api/v1/autonomous-vehicles/index.json"]
+  agents: ["existing repository job runners","GitHub Actions","reviewer"]
+  lineage: "Government source bytes -> immutable revision -> normalized report/permit -> summary/index -> public view."
+
+validation:
+  structural: "Raw revision and source hashes are validated."
+  semantic: "Permit, testing, incident and reporting-regime concepts remain separate."
+  evidence: "Each displayed metric names its exact government source and observation period."
+  publication: "Public summary/index must match the validated source projection."
+
+operational_model:
+  implementation_status: "mapped_to_existing_workflow; action executor not claimed without run evidence"
+  canonical_sources: ["src/update_av_evidence.py","src/build_av_summary.py","api/v1/autonomous-vehicles/"]
+  objects: ["Operator","Permit","TestRecord","IncidentReport","Revision","Source","Decision"]
+  links:
+    - ["Operator","HOLDS","Permit"]
+    - ["TestRecord","ISSUED_BY","Source"]
+    - ["IncidentReport","HAS_REVISION","Revision"]
+  actions:
+    - id: "publish_government_summary"
+      preconditions: "Only evidence-backed records with compatible scope, reporting regime and period may enter the summary."
+      recorded_effect: "Publish a versioned government-evidence-only summary."
+      rollback_or_recovery: "Mark unverified fields UNKNOWN and suppress unsupported ranking or safety conclusions."
+  outcome_metrics: ["source_revision_coverage","unverified_summary_fields","regime_mismatch_count"]
