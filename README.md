@@ -71,3 +71,7 @@ python src/build_av_summary.py
 - 2026年4月28日のregulation change前後でdisengagement、Dynamic Driving Task Performance Relevant System Failures、vehicle immobilizationsを同一metricとして連結しない
 - 新しいCalifornia DMV testing reporting requirementsは2026年8月26日からoperative。公開された実提出データが確認できるまで値を推測しない
 - sourceにない値・期間・単位を補間しない
+
+## Operational ontology
+
+[Project ontology](ontology/project.yaml) connects canonical entities and relationships to source evidence, guarded actions and measurable outcomes under the [shared causal-evidence vocabulary](https://github.com/KAFKA2306/know/blob/main/ontology/causal-evidence-core.yaml). It documents the existing workflow's decision boundary without claiming a new execution engine or paid service.
