@@ -57,23 +57,23 @@
   },
   "nhtsa_sgo": {
     "ads": {
-      "california_distinct_same_incident_id_count_2024_plus": 808,
-      "california_report_count_2024_plus": 808,
-      "latest_report_count": 1551,
-      "report_count_2024_plus": 1551,
-      "reporting_entity_count_2024_plus": 19
+      "california_distinct_same_incident_id_count_2024_plus": 897,
+      "california_report_count_2024_plus": 897,
+      "latest_report_count": 1745,
+      "report_count_2024_plus": 1745,
+      "reporting_entity_count_2024_plus": 20
     },
     "comparison_warning": "report counts are not exposure-normalized; ADS and Level 2 ADAS stay separate, and no company safety rate is produced without a matching mileage denominator",
     "level_2_adas": {
-      "california_distinct_same_incident_id_count_2024_plus": 668,
-      "california_report_count_2024_plus": 669,
-      "latest_report_count": 2427,
-      "report_count_2024_plus": 2416,
+      "california_distinct_same_incident_id_count_2024_plus": 739,
+      "california_report_count_2024_plus": 740,
+      "latest_report_count": 2708,
+      "report_count_2024_plus": 2697,
       "reporting_entity_count_2024_plus": 21
     },
     "publisher": "National Highway Traffic Safety Administration",
     "source_page": "https://www.nhtsa.gov/es/node/103486",
-    "source_revision_id": "2806bb15365da66773da0d48822bc12100e704a5945888a71046b02bac9eebb4"
+    "source_revision_id": "fcd28d787ee24a3cbe0420fd9abf0e0a90de385d104b056f8d11322f4dac4edf"
   },
   "schema_version": 1
 }
